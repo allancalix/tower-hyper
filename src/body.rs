@@ -1,7 +1,7 @@
 //! Tower <-> hyper body utilities
 
 use futures::Poll;
-// use http_body::Body as HttpBody;
+use http_body::Body as HttpBody;
 use hyper::body::Payload;
 
 /// Specialized Body that takes a `hyper::Body` and implements `tower_http::Body`.
@@ -16,7 +16,7 @@ pub struct LiftBody<T> {
     inner: T,
 }
 
-impl<T: ::http_body::Body> From<T> for LiftBody<T> {
+impl<T: HttpBody> From<T> for LiftBody<T> {
     fn from(inner: T) -> Self {
         LiftBody { inner }
     }
@@ -24,7 +24,7 @@ impl<T: ::http_body::Body> From<T> for LiftBody<T> {
 
 impl<T> Payload for LiftBody<T>
 where
-    T: http_body::Body + Send + 'static,
+    T: HttpBody + Send + 'static,
     T::Data: Send,
     T::Error: Into<crate::Error>,
 {
@@ -52,24 +52,24 @@ impl From<hyper::Body> for Body {
 impl Body {
     /// Get the inner wrapped `hyper::Body`.
     pub fn into_inner(self) -> hyper::Body {
-        self.inner
+	self.inner
     }
 }
 
-impl http_body::Body for Body {
+impl HttpBody for Body {
     type Data = hyper::Chunk;
     type Error = hyper::Error;
 
     fn poll_data(&mut self) -> Poll<Option<Self::Data>, Self::Error> {
-        self.inner.poll_data()
+	hyper::body::Payload::poll_data(&mut self.inner)
     }
 
     fn poll_trailers(&mut self) -> Poll<Option<hyper::HeaderMap>, Self::Error> {
-        self.inner.poll_trailers()
+	hyper::body::Payload::poll_trailers(&mut self.inner)
     }
 
     fn is_end_stream(&self) -> bool {
-        self.inner.is_end_stream()
+	hyper::body::Payload::is_end_stream(&self.inner)
     }
 }
 
@@ -78,14 +78,14 @@ impl Payload for Body {
     type Error = hyper::Error;
 
     fn poll_data(&mut self) -> Poll<Option<Self::Data>, Self::Error> {
-        self.inner.poll_data()
+	hyper::body::Payload::poll_data(&mut self.inner)
     }
 
     fn poll_trailers(&mut self) -> Poll<Option<hyper::HeaderMap>, Self::Error> {
-        self.inner.poll_trailers()
+	hyper::body::Payload::poll_trailers(&mut self.inner)
     }
 
     fn is_end_stream(&self) -> bool {
-        self.inner.is_end_stream()
+	hyper::body::Payload::is_end_stream(&self.inner)
     }
 }
