@@ -1,8 +1,8 @@
 //! Tower <-> hyper body utilities
 
 use futures::Poll;
-use http_body::Body as HttpBody;
-// use hyper::body::Payload;
+// use http_body::Body as HttpBody;
+use hyper::body::Payload;
 
 /// Specialized Body that takes a `hyper::Body` and implements `tower_http::Body`.
 #[derive(Debug)]
@@ -16,32 +16,32 @@ pub struct LiftBody<T> {
     inner: T,
 }
 
-impl<T: HttpBody> From<T> for LiftBody<T> {
+impl<T: ::http_body::Body> From<T> for LiftBody<T> {
     fn from(inner: T) -> Self {
         LiftBody { inner }
     }
 }
-//
-// impl<T> Payload for LiftBody<T>
-// where
-//     T: HttpBody + Send + 'static,
-//     T::Data: Send,
-//     T::Error: Into<crate::Error>,
-// {
-//     type Data = T::Data;
-//     type Error = T::Error;
-//
-//     fn poll_data(&mut self) -> Poll<Option<Self::Data>, Self::Error> {
-//         self.inner.poll_data()
-//     }
-//
-//     fn poll_trailers(&mut self) -> Poll<Option<hyper::HeaderMap>, Self::Error> {
-//         self.inner.poll_trailers()
-//     }
-//     fn is_end_stream(&self) -> bool {
-//         self.inner.is_end_stream()
-//     }
-// }
+
+impl<T> Payload for LiftBody<T>
+where
+    T: http_body::Body + Send + 'static,
+    T::Data: Send,
+    T::Error: Into<crate::Error>,
+{
+    type Data = T::Data;
+    type Error = T::Error;
+
+    fn poll_data(&mut self) -> Poll<Option<Self::Data>, Self::Error> {
+        self.inner.poll_data()
+    }
+
+    fn poll_trailers(&mut self) -> Poll<Option<hyper::HeaderMap>, Self::Error> {
+        self.inner.poll_trailers()
+    }
+    fn is_end_stream(&self) -> bool {
+        self.inner.is_end_stream()
+    }
+}
 
 impl From<hyper::Body> for Body {
     fn from(inner: hyper::Body) -> Self {
@@ -56,7 +56,7 @@ impl Body {
     }
 }
 
-impl HttpBody for Body {
+impl http_body::Body for Body {
     type Data = hyper::Chunk;
     type Error = hyper::Error;
 
@@ -72,20 +72,20 @@ impl HttpBody for Body {
         self.inner.is_end_stream()
     }
 }
-//
-// impl Payload for Body {
-//     type Data = hyper::Chunk;
-//     type Error = hyper::Error;
-//
-//     fn poll_data(&mut self) -> Poll<Option<Self::Data>, Self::Error> {
-//         self.inner.poll_data()
-//     }
-//
-//     fn poll_trailers(&mut self) -> Poll<Option<hyper::HeaderMap>, Self::Error> {
-//         self.inner.poll_trailers()
-//     }
-//
-//     fn is_end_stream(&self) -> bool {
-//         self.inner.is_end_stream()
-//     }
-// }
+
+impl Payload for Body {
+    type Data = hyper::Chunk;
+    type Error = hyper::Error;
+
+    fn poll_data(&mut self) -> Poll<Option<Self::Data>, Self::Error> {
+        self.inner.poll_data()
+    }
+
+    fn poll_trailers(&mut self) -> Poll<Option<hyper::HeaderMap>, Self::Error> {
+        self.inner.poll_trailers()
+    }
+
+    fn is_end_stream(&self) -> bool {
+        self.inner.is_end_stream()
+    }
+}
